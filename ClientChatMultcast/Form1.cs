@@ -17,6 +17,7 @@ namespace ClientChatMultcast
     public partial class Form1 : Form
     {
         private const int ServerTCPPort = 8800;
+        private const int PrivateMessagesListenerTCPPort = 8805;
         private const int UdpPort = 8801;
         private const string MultycastIP = "224.5.5.5";
         private const string ServerIP = "127.0.0.1";
@@ -24,55 +25,45 @@ namespace ClientChatMultcast
         private bool isConnectedToServer = false;
 
         private PublicChatListener pChatListener = null;
-        private TCPChatClient myChatClient = null;
+        private TCPMessagesSender myChatClient = null;
+        TCPPrivateConnectionsListener tCPPrivateConnectionsListener = null;
+
         private LoginForm loginForm = null;
 
         public Form1()
         {
             InitializeComponent();
             InitializeChat();
-            InitializeUsersList(); //TODO вызывать после подключения к серверу
+            InitializeUsersList();
+            InitializePrivateConnectionsListener(); 
         }
+
         private void InitializeChat()
         {
-            StartListenPublicChat();
-            myChatClient = new TCPChatClient(ServerIP, ServerTCPPort, RefreshUserList);
+            StartListenPublicChat(); 
 
+            myChatClient = new TCPMessagesSender(ServerIP, ServerTCPPort, RefreshUserList);
             loginForm = new LoginForm(myChatClient);
             loginForm.ShowDialog();
             isConnectedToServer = loginForm.IsConnected();
         }
-
         private void StartListenPublicChat()
         {
-            pChatListener = new PublicChatListener(UdpPort, MultycastIP, AddNewMessageToPublicChat);
+            pChatListener = new PublicChatListener(UdpPort, MultycastIP, AddNewMessageToPublicChat, RefreshUserList);
             pChatListener.StartListening();
         }
-
-        private void AddNewMessageToPublicChat(string message)
-        {
-            if (InvokeRequired)
-            {
-                this.Invoke(new Action<string>(AddNewMessageToPublicChat), new object[] { message });
-                return;
-            }
-            listBox2.Items.Add(message);
-        }
-
         private void InitializeUsersList()
         {
             listBox1.DisplayMember = "name";
-            new Thread(() =>
-            {
-                while (!this.IsDisposed && isConnectedToServer) //пока главное окно существет
-                {
-                    myChatClient?.RequestUserList("GET_USERS");
-                    Thread.Sleep(5000);
-                }
-            }).Start();
+        }
+
+        private void InitializePrivateConnectionsListener()
+        {
+            tCPPrivateConnectionsListener = new TCPPrivateConnectionsListener(PrivateMessagesListenerTCPPort);
         }
 
 
+        ///Нажатие на кнопку отправить сообщение
         private void button1_Click(object sender, EventArgs e)
         {
             string message = currentMessageTextBox.Text;
@@ -85,8 +76,23 @@ namespace ClientChatMultcast
         }
 
 
+        private void AddNewMessageToPublicChat(string message)
+        {
+            if (InvokeRequired)
+            {
+                this.Invoke(new Action<string>(AddNewMessageToPublicChat), new object[] { message });
+                return;
+            }
+            listBox2.Items.Add(message);
+        }
+
         private void RefreshUserList(List<User> users)
         {
+            if (InvokeRequired)
+            {
+                this.Invoke(new Action<List<User>>(RefreshUserList), new object[] { users });
+                return;
+            }
             listBox1.Items.Clear();
             foreach (User user in users)
             {
@@ -94,9 +100,12 @@ namespace ClientChatMultcast
             }
         }
 
+
+
         private void loginToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            loginForm.Show();
+            Disconnect();
+            loginForm.ShowDialog();
         }
 
         private void listBox1_DoubleClick(object sender, EventArgs e)
@@ -107,6 +116,15 @@ namespace ClientChatMultcast
 
             MessageBox.Show($"Пользователь: {user.name} ip: {user.ip}", "информация о пользователе");
 
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Disconnect();
+        }
+        private void Disconnect()
+        {
+            myChatClient.SendMessageWithСonfirmation("USER_DISCONNECTED");
         }
     }
 }

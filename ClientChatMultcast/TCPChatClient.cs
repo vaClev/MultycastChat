@@ -12,7 +12,7 @@ using System.Text.Json.Nodes;
 namespace ClientChatMultcast
 {
     public delegate void RefreshUsersCallback(List<User> users);
-    public class TCPChatClient
+    public class TCPMessagesSender
     {
         private readonly string serverIP;
         private readonly int serverTCPPort = 8800;
@@ -24,7 +24,7 @@ namespace ClientChatMultcast
 
 
 
-        public TCPChatClient(string serverIP, int serverTCPPort, RefreshUsersCallback refreshUsersCallback)
+        public TCPMessagesSender(string serverIP, int serverTCPPort, RefreshUsersCallback refreshUsersCallback)
         {
             this.serverIP = serverIP;
             this.serverTCPPort = serverTCPPort;
@@ -90,8 +90,13 @@ namespace ClientChatMultcast
             return false;
         }
 
-        public async void RequestUserList(string requestText)
+
+
+
+        /// В текущей реалиации не требуется.  Но возожно еще пригодится. Пока не удаляю
+        public async void SendRequestUserList()
         {
+            const string requestText = "GET_USERS";
             try
             {
                 TcpClient tcpClient = new TcpClient();
@@ -129,11 +134,9 @@ namespace ClientChatMultcast
                 MessageBox.Show(ex.Message);
             }
         }
-
         private void RefreshUsersList(string userslistString)
         {
             var jsonObject = JsonSerializer.Deserialize<List<User>>(userslistString);
-
             userList = jsonObject;// пока всегда обновляем
             // уведомить подписчиков об обновлении списка
             refreshUsersCallback(userList);

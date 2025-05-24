@@ -61,14 +61,17 @@ namespace TCPMultycast
                                         string response = GetUsersString(); // конвертировали всех в одну строку
                                         byte[] responseBytes = Encoding.Unicode.GetBytes(response);
 
-
-
-                                        //
-                                        //
-                                        //TODO подумать как отправить правильно ответ
                                         stream.Write(responseBytes, 0, responseBytes.Length);
                                         break;
-                                        //
+                                    }
+                                    else if(message == "USER_DISCONNECTED")
+                                    {
+                                        string username = users[clientIP];
+                                        users.Remove(clientIP);
+                                        string messagepost = username + " покинул чат";
+
+                                        Console.WriteLine(messagepost);
+                                        BroadcastMessage(messagepost);
                                     }
                                     else
                                     {
@@ -113,16 +116,21 @@ namespace TCPMultycast
         private string GetUsersString()
         {
             var userlistString = new StringBuilder();
-            userlistString.Append("[");
-            foreach (var user in users)
+            userlistString.Append("\"users\":[");
+            if (users.Count != 0)
             {
-                userlistString.Append("{\"name\":\"");
-                userlistString.Append(user.Value);
-                userlistString.Append("\", \"ip\":\"");
-                userlistString.Append(user.Key);
-                userlistString.Append("\"},");
+                foreach (var user in users)
+                {
+                    userlistString.Append("{\"name\":\"");
+                    userlistString.Append(user.Value);
+                    userlistString.Append("\", \"ip\":\"");
+                    userlistString.Append(user.Key);
+                    userlistString.Append("\"},");
+                }
+                userlistString.Remove(userlistString.Length - 1, 1); //Стирание запятой после последнего
             }
-            userlistString.Remove(userlistString.Length-1, 1); //Стирание запятой после последнего
+            
+            
             userlistString.Append("]");
             Console.WriteLine(userlistString.ToString());
             return userlistString.ToString();
@@ -132,8 +140,8 @@ namespace TCPMultycast
         {
             UdpClient udpClient = new UdpClient();
             udpClient.JoinMulticastGroup(IPAddress.Parse(MultycastIP));
-
-            byte[] data = Encoding.Unicode.GetBytes(messagepost + "|||" + GetUsersString());
+            
+            byte[] data = Encoding.Unicode.GetBytes("{\"message\":\""+messagepost +"\", " + GetUsersString() +"}");
             udpClient.Send(data, data.Length, MultycastIP, UdpPort);
             udpClient.Close();
             Console.WriteLine($"Широковещательное сообщение отправлено: {messagepost}");
