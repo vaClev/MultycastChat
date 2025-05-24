@@ -60,6 +60,7 @@ namespace ClientChatMultcast
         private void InitializePrivateConnectionsListener()
         {
             tCPPrivateConnectionsListener = new TCPPrivateConnectionsListener(PrivateMessagesListenerTCPPort);
+            tCPPrivateConnectionsListener.Start();
         }
 
 

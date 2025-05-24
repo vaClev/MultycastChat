@@ -92,7 +92,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PublicChatListener.cs" />
-    <Compile Include="TCPChatClient.cs" />
+    <Compile Include="TCPMessagesSender.cs" />
     <Compile Include="TCPPrivateConnectionsListener.cs" />
     <Compile Include="User.cs" />
     <EmbeddedResource Include="Form1.resx">
