@@ -12,9 +12,9 @@ namespace ClientChatMultcast
 {
     public partial class LoginForm: Form
     {
-        private TCPChatClient myChatClient;
+        private TCPMessagesSender myChatClient;
         private bool m_isConnected;
-        public LoginForm(TCPChatClient tCPChatClient)
+        public LoginForm(TCPMessagesSender tCPChatClient)
         {
             InitializeComponent();
             this.myChatClient = tCPChatClient;
