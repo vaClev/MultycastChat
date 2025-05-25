@@ -55,16 +55,8 @@ namespace TCPMultycast
                                 {
                                     string message = Encoding.Unicode.GetString(buffer, 0, bytesRead);
 
-                                    if(message == "GET_USERS")
-                                    {
-                                        // Формируем список пользователей клиенту 
-                                        string response = GetUsersString(); // конвертировали всех в одну строку
-                                        byte[] responseBytes = Encoding.Unicode.GetBytes(response);
 
-                                        stream.Write(responseBytes, 0, responseBytes.Length);
-                                        break;
-                                    }
-                                    else if(message == "USER_DISCONNECTED")
+                                    if(message == "USER_DISCONNECTED")
                                     {
                                         string username = users[clientIP];
                                         users.Remove(clientIP);
@@ -123,6 +115,7 @@ namespace TCPMultycast
                 {
                     userlistString.Append("{\"name\":\"");
                     userlistString.Append(user.Value);
+
                     userlistString.Append("\", \"ip\":\"");
                     userlistString.Append(user.Key);
                     userlistString.Append("\"},");

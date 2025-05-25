@@ -20,15 +20,11 @@ namespace ClientChatMultcast
 
         private bool isAvailable = false;
 
-        RefreshUsersCallback refreshUsersCallback = null;
 
-
-
-        public TCPMessagesSender(string serverIP, int serverTCPPort, RefreshUsersCallback refreshUsersCallback)
+        public TCPMessagesSender(string serverIP, int serverTCPPort)
         {
             this.serverIP = serverIP;
             this.serverTCPPort = serverTCPPort;
-            this.refreshUsersCallback = refreshUsersCallback;
         }
 
         public async void SendMessage(string message)
@@ -89,59 +85,6 @@ namespace ClientChatMultcast
             }
             return false;
         }
-
-
-
-
-        /// В текущей реалиации не требуется.  Но возожно еще пригодится. Пока не удаляю
-        public async void SendRequestUserList()
-        {
-            const string requestText = "GET_USERS";
-            try
-            {
-                TcpClient tcpClient = new TcpClient();
-                await tcpClient.ConnectAsync(serverIP, serverTCPPort);
-                NetworkStream stream = tcpClient.GetStream();// получаем поток для взаимодействия с сервером
-                var messageBytes = Encoding.Unicode.GetBytes(requestText);// конвертируем данные в массив байтов
-                await stream.WriteAsync(messageBytes, 0, messageBytes.Length);// отправляем данные серверу
-
-
-
-                var buffer = new byte[1024]; // буфер для получения данных
-                var response = new StringBuilder();
-                int bytes;  // количество полученных байтов
-                do
-                {
-                    // получаем данные
-                    bytes = await stream.ReadAsync(buffer, 0, buffer.Length);
-                    // преобразуем в строку и добавляем ее в StringBuilder
-                    response.Append(Encoding.Unicode.GetString(buffer, 0, bytes));
-                }
-                while (bytes > 0); // пока данные есть в потоке 
-
-
-
-                RefreshUsersList(response.ToString());
-                stream.Close();
-                tcpClient.Close();
-            }
-            catch (SocketException ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-        }
-        private void RefreshUsersList(string userslistString)
-        {
-            var jsonObject = JsonSerializer.Deserialize<List<User>>(userslistString);
-            userList = jsonObject;// пока всегда обновляем
-            // уведомить подписчиков об обновлении списка
-            refreshUsersCallback(userList);
-        }
-
 
         public bool isServerAvailable()
         {

@@ -26,7 +26,9 @@ namespace ClientChatMultcast
 
         private PublicChatListener pChatListener = null;
         private TCPMessagesSender myChatClient = null;
+
         TCPPrivateConnectionsListener tCPPrivateConnectionsListener = null;
+        Dictionary<string, PrivateChatForm> privateChats = null;
 
         private LoginForm loginForm = null;
 
@@ -35,14 +37,14 @@ namespace ClientChatMultcast
             InitializeComponent();
             InitializeChat();
             InitializeUsersList();
-            InitializePrivateConnectionsListener(); 
+            InitializePrivateConnections(); 
         }
 
         private void InitializeChat()
         {
             StartListenPublicChat(); 
 
-            myChatClient = new TCPMessagesSender(ServerIP, ServerTCPPort, RefreshUserList);
+            myChatClient = new TCPMessagesSender(ServerIP, ServerTCPPort);
             loginForm = new LoginForm(myChatClient);
             loginForm.ShowDialog();
             isConnectedToServer = loginForm.IsConnected();
@@ -57,9 +59,10 @@ namespace ClientChatMultcast
             listBox1.DisplayMember = "name";
         }
 
-        private void InitializePrivateConnectionsListener()
+        private void InitializePrivateConnections()
         {
-            tCPPrivateConnectionsListener = new TCPPrivateConnectionsListener(PrivateMessagesListenerTCPPort);
+            privateChats = new Dictionary<string, PrivateChatForm>();
+            tCPPrivateConnectionsListener = new TCPPrivateConnectionsListener(PrivateMessagesListenerTCPPort, privateChats, CreatePrivateChat); 
             tCPPrivateConnectionsListener.Start();
         }
 
@@ -87,6 +90,7 @@ namespace ClientChatMultcast
             listBox2.Items.Add(message);
         }
 
+        //Отрисовка списка пользователей
         private void RefreshUserList(List<User> users)
         {
             if (InvokeRequired)
@@ -125,7 +129,43 @@ namespace ClientChatMultcast
         }
         private void Disconnect()
         {
+            foreach(var form in privateChats)
+                form.Value.Close(); //закрыть все приватный чаты
+
+            //Сигнализировать а сервер что я выходу
             myChatClient.SendMessageWithСonfirmation("USER_DISCONNECTED");
+
+            listBox1.Items.Clear();
+            //listBox2.Items.Clear(); //Закоментировано для отладки
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            if(listBox1.SelectedItem == null)
+            {
+                return;
+            }
+            var user = listBox1.SelectedItem as User;
+            MessageBox.Show("Открываю приват с " + user.name);
+            CreatePrivateChat(user);
+        }
+
+        private void CreatePrivateChat(User user)
+        {
+            if (!privateChats.ContainsKey(user.ip))
+                privateChats.Add(user.ip, new PrivateChatForm(loginForm.username, user, PrivateMessagesListenerTCPPort));
+            privateChats[user.ip].Show();
+        }
+        private void CreatePrivateChat(string userIP)
+        {
+            foreach (var user in listBox1.Items )
+            {
+                if ((user as User).ip == userIP)
+                {
+                    CreatePrivateChat(user as User);
+                    return;
+                }
+            }
         }
     }
 }

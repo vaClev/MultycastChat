@@ -7,11 +7,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.StartPanel;
 
 namespace ClientChatMultcast
 {
     public partial class LoginForm: Form
     {
+        public string username { get; set; }
         private TCPMessagesSender myChatClient;
         private bool m_isConnected;
         public LoginForm(TCPMessagesSender tCPChatClient)
@@ -33,6 +35,7 @@ namespace ClientChatMultcast
             {
                 return;
             }
+            username = message;
             textBox1.Clear();
             if (myChatClient.SendMessageWithСonfirmation(message))
             {
